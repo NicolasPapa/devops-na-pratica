@@ -1,0 +1,43 @@
+# Pipeline de CI (Continuous Integration, integração contínua)
+# Roda sozinho no GitHub toda vez que chega código novo.
+
+name: CI
+
+# GATILHO (trigger): quando o pipeline dispara
+on:
+  push:
+    branches: [main]      # a cada push na main
+  pull_request:           # e a cada pull request
+
+jobs:
+  build-and-test:
+    # Máquina virtual do GitHub onde o pipeline roda (um Linux limpo, sem nada seu)
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Baixa o código do repositório para dentro da máquina
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      # 2. Instala o Node.js (e guarda as dependências em cache para ficar mais rápido)
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # 3. Instala as dependências exatamente como estão no package-lock.json
+      - name: Instalar dependências
+        run: npm ci
+
+      # 4. Lint: verifica o padrão do código
+      - name: Lint
+        run: npm run lint
+
+      # 5. Testes automatizados (os 7 testes). Se algum falhar, o pipeline para aqui.
+      - name: Testes
+        run: npm test
+
+      # 6. Build: gera a pasta dist/ (o "pacote" do app)
+      - name: Build
+        run: npm run build
