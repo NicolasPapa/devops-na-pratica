@@ -1,0 +1,6 @@
+# Copie para "terraform.tfvars" e ajuste. O terraform.tfvars NÃO vai para o GitHub (.gitignore).
+aws_region       = "us-east-1"
+environment      = "dev"
+instance_type    = "t3.micro"
+allowed_ssh_cidr = "SEU.IP.AQUI/32"
+# key_name       = "minha-chave-ssh"

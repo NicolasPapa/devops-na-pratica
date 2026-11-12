@@ -6,22 +6,23 @@ name: CI
 # GATILHO (trigger): quando o pipeline dispara
 on:
   push:
-    branches: [main]      # a cada push na main
-  pull_request:           # e a cada pull request
+    branches: [main] # a cada push na main
+  pull_request: # e a cada pull request
 
 jobs:
+  # JOB 1: verifica a APLICAÇÃO (lint, testes e build)
   build-and-test:
-    # Máquina virtual do GitHub onde o pipeline roda (um Linux limpo, sem nada seu)
+    # Máquina virtual do GitHub onde o job roda (um Linux limpo, sem nada seu)
     runs-on: ubuntu-latest
 
     steps:
       # 1. Baixa o código do repositório para dentro da máquina
       - name: Baixar o código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 2. Instala o Node.js (e guarda as dependências em cache para ficar mais rápido)
       - name: Instalar Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -41,3 +42,30 @@ jobs:
       # 6. Build: gera a pasta dist/ (o "pacote" do app)
       - name: Build
         run: npm run build
+
+  # JOB 2: verifica a INFRAESTRUTURA (scripts Terraform). Roda em paralelo com o job 1.
+  terraform:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: infra # todos os comandos rodam dentro da pasta infra/
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v5
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Formatação: falha se algum arquivo .tf estiver fora do padrão
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      # Baixa o provider da AWS, SEM conectar a um state remoto (não cria nada na nuvem)
+      - name: Terraform init
+        run: terraform init -backend=false -input=false
+
+      # Valida sintaxe, tipos e referências entre recursos, sem precisar de conta AWS
+      - name: Terraform validate
+        run: terraform validate
